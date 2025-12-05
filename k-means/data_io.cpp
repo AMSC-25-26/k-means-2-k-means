@@ -1,33 +1,54 @@
-#include <DataFrame/DataFrame.h>
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <vector>
+#include "rapidcsv.h"
 
-using namespace hmdf;
 using namespace std;
+using namespace rapidcsv;
 
-int load_iris_dataset() {
-    StdDataFrame<string> iris_dataset;
+vector<vector<double> > load_csv_dataset(const char *filename) {
+    // Loop over each line of the CSV file, and then parse the values for each column. Insert into the resulting matrix only the numeric ones
+    Document csv(filename);
+    printf("Loaded CSV with %lu rows and %lu columns", csv.GetRowCount(), csv.GetColumnCount());
 
-    // Load CSV into DataFrame
-    iris_dataset.read("dataset.csv", io_format::csv2);
-    cout << "Iris Dataset Loaded Successfully!" << endl;
+    vector<vector<double> > data;
+    // For each row, insert into data
+    for (size_t r = 0; r < csv.GetRowCount(); r++) {
+        vector<double> row_data;
 
-    // cout << "DataFrame Info:" << endl;
-    //  description_dataframe = iris_dataset.describe<>();
+        for (size_t c = 0; c < csv.GetColumnCount(); c++) {
+            try {
+                auto val = csv.GetCell<double>(c, r);
+                row_data.push_back(val);
+            } catch (const std::exception &e) {
+                // Non-numeric value, skip
+                row_data.push_back(0);
+            }
+        }
 
-    const auto  &cool_col_ref = iris_dataset.get_column<string>("species");
-    const auto  &str_col_ref = iris_dataset.get_column<string>("species");
+        data.push_back(row_data);
+    }
 
-    cout << cool_col_ref[1] << cool_col_ref[2] << cool_col_ref[3] << endl;
-    cout << "Str Column = ";
-    for (const auto &str : str_col_ref)
-        cout << str << ", ";
-    cout << endl;
+    // If a column is all zeros, remove it
+    if (!data.empty()) {
+        for (size_t c = 0; c < data[0].size();) {
+            bool all_zeros = true;
+            for (size_t r = 0; r < data.size(); r++) {
+                if (data[r][c] != 0) {
+                    all_zeros = false;
+                    break;
+                }
+            }
+            if (all_zeros) {
+                // Remove column c
+                for (size_t r = 0; r < data.size(); r++) {
+                    data[r].erase(data[r].begin() + c);
+                }
+            } else {
+                c++;
+            }
+        }
+    }
 
-    cout << "There are " << iris_dataset.get_column<double>("sepal_width").size()
-              << " IBM close prices" << endl;
-    cout << "There are " << iris_dataset.get_index().size() << " IBM indices" << endl;
-
-
-    return 0;
+    return data;
 }

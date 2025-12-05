@@ -7,20 +7,20 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(FetchContent)
 FetchContent_Declare(
-        DataFrame
-        GIT_REPOSITORY https://github.com/hosseinmoein/DataFrame.git
-        GIT_TAG master
+        rapidcsv
+        GIT_REPOSITORY https://github.com/d99kris/rapidcsv.git
+        GIT_TAG v8.90
 )
-# Make the fetched project available and create its targets
-FetchContent_MakeAvailable(DataFrame)
+FetchContent_MakeAvailable(rapidcsv)
 
 add_executable(
         k_means
         main.cpp
 )
 
+target_include_directories(k_means PRIVATE ${rapidcsv_SOURCE_DIR}/src)
+
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 
 # Link your executable to the DataFrame target provided by the project
 target_link_libraries(k_means PRIVATE stdc++exp)
-target_link_libraries(k_means PRIVATE DataFrame::DataFrame)
