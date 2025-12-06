@@ -24,6 +24,11 @@ public:
     int save_state(const char *filename);
 
     int load_state(const char *filename);
+
+private:
+    // Hereafter the internal state of the classifier
+    vector<vector<vector<double> > > centroids_history {{}}; // history of centroids
+    int iteration_count = 0;
 };
 
 

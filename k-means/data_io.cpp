@@ -2,6 +2,7 @@
 #include <vector>
 #include <spdlog/spdlog.h>
 #include "rapidcsv.h"
+#include <iostream>
 
 using namespace std;
 using namespace rapidcsv;
