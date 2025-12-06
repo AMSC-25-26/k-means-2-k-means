@@ -16,6 +16,7 @@ FetchContent_MakeAvailable(rapidcsv)
 add_executable(
         k_means
         main.cpp
+        KMeansClassifier.cpp
 )
 
 target_include_directories(k_means PRIVATE ${rapidcsv_SOURCE_DIR}/src)
