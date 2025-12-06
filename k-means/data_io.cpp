@@ -52,3 +52,25 @@ vector<vector<double> > load_csv_dataset(const char *filename) {
 
     return data;
 }
+
+int save_csv_dataset(const char *filename, const vector<vector<double> > &data, const vector<int> &labels) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error opening file for writing: " << filename << endl;
+        return -1;
+    }
+
+    Document csv;
+    // Write data
+    for (size_t r = 0; r < data.size(); r++) {
+        for (size_t c = 0; c < data[r].size(); c++) {
+            csv.SetCell(c, r, data[r][c]);
+        }
+        // Write label in the last column
+        csv.SetCell(data[r].size(), r, labels[r]);
+    }
+
+    csv.Save(file);
+
+    return 0;
+}
