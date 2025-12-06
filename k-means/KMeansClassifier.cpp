@@ -16,7 +16,9 @@ vector<int> KMeansClassifier::fit() {
         centroids_history.back()[c] = data[c];
     }
 
-    while (iteration_count < max_iterations) {
+    // We stop when centroids do not change or we reach max iterations
+    while (iteration_count < max_iterations && (iteration_count == 0 || centroids_history.back() != centroids_history[
+                                                    centroids_history.size() - 2])) {
         // Step 1: Assign labels based on closest centroid
         vector<int> new_labels(data.size());
 
@@ -28,7 +30,7 @@ vector<int> KMeansClassifier::fit() {
                 double dist = 0.0;
 
                 for (size_t d = 0; d < data[i].size(); d++) {
-                    double diff = data[i][d] - centroids_history.back()[c][d];
+                    const double diff = data[i][d] - centroids_history.back()[c][d];
                     dist += diff * diff;
                 }
                 if (dist < min_dist) {
@@ -41,10 +43,10 @@ vector<int> KMeansClassifier::fit() {
         }
 
         // Step 2: Update centroids
-        vector<vector<double> > new_centroids(cluster_count, vector<double>(data[0].size(), 0.0));
-        vector<int> counts(cluster_count, 0);
+        vector new_centroids(cluster_count, vector(data[0].size(), 0.0));
+        vector counts(cluster_count, 0);
         for (size_t i = 0; i < data.size(); i++) {
-            int cluster = new_labels[i];
+            const int cluster = new_labels[i];
             for (size_t d = 0; d < data[i].size(); d++) {
                 new_centroids[cluster][d] += data[i][d];
             }
@@ -63,5 +65,6 @@ vector<int> KMeansClassifier::fit() {
         iteration_count++;
     }
 
+    spdlog::info("Finished KMeans fit after {} iterations", iteration_count);
     return labels;
 }

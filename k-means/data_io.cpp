@@ -9,8 +9,8 @@ using namespace rapidcsv;
 
 vector<vector<double> > load_csv_dataset(const char *filename) {
     // Loop over each line of the CSV file, and then parse the values for each column. Insert into the resulting matrix only the numeric ones
-    Document csv(filename);
-    spdlog::info("Loaded CSV with {} rows and {} columns", csv.GetRowCount(), csv.GetColumnCount());
+    const Document csv(filename);
+    spdlog::debug("Loaded CSV with {} rows and {} columns", csv.GetRowCount(), csv.GetColumnCount());
 
     vector<vector<double> > data;
     // For each row, insert into data
