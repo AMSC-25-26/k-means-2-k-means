@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="k_means - iris" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="$FileDir$/data/dataset-iris.csv $FileDir$/data/output.csv 3" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$FileDir$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="k_means" TARGET_NAME="k_means" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="k_means" RUN_TARGET_NAME="k_means">
+  <configuration default="false" name="k_means - iris" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="./data/dataset-iris.csv ./data/output.csv 3" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$ProjectFileDir$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="k_means" TARGET_NAME="k_means" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="k_means" RUN_TARGET_NAME="k_means">
     <method v="2">
       <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
     </method>
