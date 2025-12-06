@@ -32,5 +32,11 @@ target_include_directories(k_means PRIVATE ${spdlog_SOURCE_DIR}/include)
 
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 
+# Find OpenMP and link to the target
+find_package(OpenMP REQUIRED)
+if (OpenMP_CXX_FOUND)
+    target_link_libraries(k_means PRIVATE OpenMP::OpenMP_CXX)
+endif ()
+
 # Link your executable to the DataFrame target provided by the project
 target_link_libraries(k_means PRIVATE stdc++exp)
