@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Needed libraries
 include(FetchContent)
 FetchContent_Declare(
         rapidcsv
@@ -13,6 +14,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(rapidcsv)
 
+FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG v1.x
+)
+FetchContent_MakeAvailable(spdlog)
+
 add_executable(
         k_means
         main.cpp
@@ -20,6 +28,7 @@ add_executable(
 )
 
 target_include_directories(k_means PRIVATE ${rapidcsv_SOURCE_DIR}/src)
+target_include_directories(k_means PRIVATE ${spdlog_SOURCE_DIR}/include)
 
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 

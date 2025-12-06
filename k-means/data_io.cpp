@@ -1,6 +1,6 @@
 #include <fstream>
-#include <iostream>
 #include <vector>
+#include <spdlog/spdlog.h>
 #include "rapidcsv.h"
 
 using namespace std;
@@ -9,7 +9,7 @@ using namespace rapidcsv;
 vector<vector<double> > load_csv_dataset(const char *filename) {
     // Loop over each line of the CSV file, and then parse the values for each column. Insert into the resulting matrix only the numeric ones
     Document csv(filename);
-    printf("Loaded CSV with %lu rows and %lu columns", csv.GetRowCount(), csv.GetColumnCount());
+    spdlog::info("Loaded CSV with {} rows and {} columns", csv.GetRowCount(), csv.GetColumnCount());
 
     vector<vector<double> > data;
     // For each row, insert into data
@@ -56,7 +56,7 @@ vector<vector<double> > load_csv_dataset(const char *filename) {
 int save_csv_dataset(const char *filename, const vector<vector<double> > &data, const vector<int> &labels) {
     ofstream file(filename);
     if (!file.is_open()) {
-        cerr << "Error opening file for writing: " << filename << endl;
+        spdlog::error("Error opening file for writing: {}", filename);
         return -1;
     }
 

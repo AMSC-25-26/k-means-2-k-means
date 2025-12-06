@@ -1,12 +1,13 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <spdlog/spdlog.h>
 #include "data_io.cpp"
 #include "KMeansClassifier.h"
 
 int main(int argc, char* argv[]) {
     if (argc < 4) {
-        std::cerr << "Usage: " << argv[0] << " <input_csv> <output_csv> <cluster_count>\n";
+        spdlog::error("Usage: {} <input_csv> <output_csv> <cluster_count>", argv[0]);
         return 1;
     }
 
@@ -18,7 +19,7 @@ int main(int argc, char* argv[]) {
         cluster_count = std::stoi(argv[3]);
         if (cluster_count <= 0) throw std::invalid_argument("non-positive");
     } catch (const std::exception&) {
-        std::cerr << "Invalid cluster count: " << argv[3] << "\n";
+        spdlog::error("Invalid cluster count: {}", argv[3]);
         return 1;
     }
 
