@@ -7,14 +7,19 @@
 #include <limits>
 #include <iostream>
 
+void KMeansClassifier::set_initial_centroids() {
+    centroids_history.back().resize(cluster_count);
+
+    for (int c = 0; c < cluster_count; c++) {
+        centroids_history.back()[c] = data[c];
+    }
+}
+
 vector<int> KMeansClassifier::fit() {
     spdlog::info("Starting KMeans fit with {} clusters and max {} iterations", cluster_count, max_iterations);
 
     // Init centroids by selecting first k data points
-    centroids_history.back().resize(cluster_count);
-    for (int c = 0; c < cluster_count; c++) {
-        centroids_history.back()[c] = data[c];
-    }
+    set_initial_centroids();
 
     // We stop when centroids do not change or we reach max iterations
     while (iteration_count < max_iterations && (iteration_count == 0 || centroids_history.back() != centroids_history[
@@ -32,7 +37,7 @@ vector<int> KMeansClassifier::fit() {
                 for (size_t d = 0; d < data[i].size(); d++) {
                     const double diff = data[i][d] - centroids_history.back()[c][d];
                     dist += diff * diff;
-                }
+                } // This is the squared Euclidean distance
                 if (dist < min_dist) {
                     min_dist = dist;
                     best_cluster = c;

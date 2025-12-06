@@ -19,6 +19,7 @@ public:
         : cluster_count(clusters), max_iterations(max_iter), data(init_data) {
     }
 
+
     vector<int> fit();
 
     int save_state(const char *filename);
@@ -27,8 +28,10 @@ public:
 
 private:
     // Hereafter the internal state of the classifier
-    vector<vector<vector<double> > > centroids_history {{}}; // history of centroids
+    vector<vector<vector<double> > > centroids_history{{}}; // history of centroids
     int iteration_count = 0;
+
+    void set_initial_centroids();
 };
 
 
