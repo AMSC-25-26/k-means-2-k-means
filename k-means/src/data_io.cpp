@@ -9,7 +9,7 @@ using namespace rapidcsv;
 
 vector<vector<double> > load_csv_dataset(const char *filename) {
     // Loop over each line of the CSV file, and then parse the values for each column. Insert into the resulting matrix only the numeric ones
-    const Document csv(filename);
+    const Document csv(filename, LabelParams(-1, -1));
     spdlog::debug("Loaded CSV with {} rows and {} columns", csv.GetRowCount(), csv.GetColumnCount());
 
     vector<vector<double> > data;
@@ -21,7 +21,7 @@ vector<vector<double> > load_csv_dataset(const char *filename) {
             try {
                 auto val = csv.GetCell<double>(c, r);
                 row_data.push_back(val);
-            } catch (const std::exception &e) {
+            } catch (const exception &e) {
                 // Non-numeric value, skip
                 row_data.push_back(0);
             }
@@ -54,6 +54,37 @@ vector<vector<double> > load_csv_dataset(const char *filename) {
     return data;
 }
 
+static inline string trim(const string &s) {
+    auto start = s.begin();
+    while (start != s.end() && isspace(static_cast<unsigned char>(*start))) ++start;
+    auto end = s.end();
+    do {
+        if (end == start) break;
+        --end;
+    } while (isspace(static_cast<unsigned char>(*end)));
+    return string(start, end + 1);
+}
+
+static vector<string> load_label_file(const char *filename) {
+    vector<string> labels;
+
+    ifstream ifs(filename);
+    if (!ifs.is_open()) {
+        spdlog::error("Could not open labels file: {}", filename);
+        return labels;
+    }
+
+    string line;
+    while (getline(ifs, line)) {
+        string t = trim(line);
+        if (t.empty()) continue; // ignore empty lines
+        labels.push_back(t);
+    }
+
+    spdlog::debug("Read {} labels from {}", labels.size(), filename);
+    return labels;
+}
+
 int save_csv_dataset(const char *filename, const vector<vector<double> > &data, const vector<int> &labels) {
     ofstream file(filename);
     if (!file.is_open()) {
@@ -67,6 +98,7 @@ int save_csv_dataset(const char *filename, const vector<vector<double> > &data, 
         for (size_t c = 0; c < data[r].size(); c++) {
             csv.SetCell(c, r, data[r][c]);
         }
+
         // Write label in the last column
         csv.SetCell(data[r].size(), r, labels[r]);
     }
