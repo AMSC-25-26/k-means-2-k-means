@@ -8,9 +8,10 @@
 #include <spdlog/spdlog.h>
 #include "data_io.cpp"
 #include "KMeansClassifier.h"
+#include "clustering_evaluator.cpp"
 
 
-int main(int argc, char *argv[]) {
+int main(const int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::debug);
 
     if (argc < 4) {
@@ -56,13 +57,15 @@ int main(int argc, char *argv[]) {
     }
 
     KMeansClassifier kmeans(content, cluster_count);
-    const std::vector<int> labels = kmeans.fit();
+    std::vector<int> labels = kmeans.fit();
 
     save_csv_dataset(output_filename, content, labels);
 
     if (!true_labels.empty()) {
         spdlog::info("Predicted {} labels; true labels provided for {} samples", labels.size(), true_labels.size());
         // Further evaluation (e.g., AMI) can be added here using the loaded true_labels.
+        double ami = adjusted_mutual_info<string>(true_labels, labels);
+        spdlog::info("Adjusted Mutual Information (AMI): {:.6f}/1", ami);
     }
 
     return 0;
