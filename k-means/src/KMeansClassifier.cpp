@@ -3,21 +3,27 @@
 //
 
 #include "KMeansClassifier.h"
+#include "CentroidInitialazer.h"
 #include "spdlog/spdlog.h"
 #include <limits>
 #include <iostream>
 #include "omp.h"
 
+
 using namespace std;
 
 void KMeansClassifier::set_initial_centroids() {
-    centroids_history_sequential.back().resize(cluster_count);
-    centroids_history_parallel.back().resize(cluster_count);
+     auto initial_centroids = CentroidInitializer::initialize_centroids(
+         data,
+         cluster_count,
+         InitializationMethod::KmeansPlusPlus,
+         42 //seed
+     );
+     centroids_history_sequential.back() = initial_centroids;
 
-    for (int c = 0; c < cluster_count; c++) {
-        centroids_history_sequential.back()[c] = data[c];
-        centroids_history_parallel.back()[c] = data[c];
-    }
+     centroids_history_parallel.back() = initial_centroids;
+
+     spdlog::debug("Centroids initialized via K-Means++");
 }
 
 vector<int> KMeansClassifier::fit() {

@@ -25,6 +25,9 @@ add_executable(
         k_means
         src/main.cpp
         src/KMeansClassifier.cpp
+        src/CentroidInitializer.cpp
+        src/clustering_evaluator.cpp
+        src/data_io.cpp
 )
 
 target_include_directories(k_means PRIVATE ${rapidcsv_SOURCE_DIR}/src)
@@ -39,4 +42,4 @@ if (OpenMP_CXX_FOUND)
 endif ()
 
 # Link your executable to the DataFrame target provided by the project
-target_link_libraries(k_means PRIVATE stdc++exp)
+target_link_libraries(k_means PRIVATE spdlog::spdlog stdc++exp)
