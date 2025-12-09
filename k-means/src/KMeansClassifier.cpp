@@ -3,10 +3,11 @@
 //
 
 #include "KMeansClassifier.h"
-#include "CentroidInitialazer.h"
 #include "spdlog/spdlog.h"
 #include <limits>
 #include <iostream>
+
+#include "CentroidInitializer.h"
 #include "omp.h"
 
 
@@ -16,7 +17,7 @@ void KMeansClassifier::set_initial_centroids() {
      auto initial_centroids = CentroidInitializer::initialize_centroids(
          data,
          cluster_count,
-         InitializationMethod::KmeansPlusPlus,
+         // InitializationMethod::KmeansPlusPlus,
          42 //seed
      );
      centroids_history_sequential.back() = initial_centroids;

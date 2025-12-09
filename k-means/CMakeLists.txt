@@ -26,8 +26,6 @@ add_executable(
         src/main.cpp
         src/KMeansClassifier.cpp
         src/CentroidInitializer.cpp
-        src/clustering_evaluator.cpp
-        src/data_io.cpp
 )
 
 target_include_directories(k_means PRIVATE ${rapidcsv_SOURCE_DIR}/src)
@@ -63,9 +61,10 @@ else ()
     if (OpenMP_CXX_FOUND)
         target_link_libraries(k_means PRIVATE OpenMP::OpenMP_CXX)
     endif ()
+
+    # Link your executable to the DataFrame target provided by the project
+    target_link_libraries(k_means PRIVATE spdlog::spdlog stdc++exp)
 endif ()
 
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 
-# Link your executable to the DataFrame target provided by the project
-target_link_libraries(k_means PRIVATE spdlog::spdlog stdc++exp)
