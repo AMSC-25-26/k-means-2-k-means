@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.28.3)
 project(k_means)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -61,6 +61,11 @@ else ()
     if (OpenMP_CXX_FOUND)
         target_link_libraries(k_means PRIVATE OpenMP::OpenMP_CXX)
     endif ()
+
+    find_package(MPI REQUIRED)
+    if (MPI_CXX_FOUND)
+        target_link_libraries(k_means PRIVATE MPI::MPI_CXX)
+    endif()
 
     # Link your executable to the DataFrame target provided by the project
     target_link_libraries(k_means PRIVATE spdlog::spdlog stdc++exp)
