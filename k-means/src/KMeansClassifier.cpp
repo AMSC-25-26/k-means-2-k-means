@@ -162,7 +162,7 @@ pair<vector<int>, int> KMeansClassifier::fit_parallel() {
 
     vector<int>labels;
 
-    spdlog::debug("Starting parallel KMeans in rank {}, working on {} datapoints, size: {}, count: {}, local count: {}, total elements: {}", rank,send_counts[rank],size,count,local_labels.capacity(),total_elements);
+    spdlog::debug("Starting parallel KMeans in rank {}, working on {} datapoints, size: {}, local count: {}, total elements: {}", rank,send_counts[rank],size,local_labels.capacity(),total_elements);
 
 
     // --- Ciclo KMeans ---
