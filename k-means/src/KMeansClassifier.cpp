@@ -87,7 +87,11 @@ vector<int> KMeansClassifier::fit() {
     parallel_time = std::chrono::duration<double, std::milli>(tp1 - tp0).count();
     labels_parallel = parallel_result.first;
     iteration_count_parallel = parallel_result.second;
-    spdlog::info("Parallel KMeans took {:.3f} ms", parallel_time);
+
+    if (rank == 0) {
+        spdlog::info("Parallel KMeans took {:.3f} ms", parallel_time);
+    }
+
 
     if (rank == 0) {
         if (labels_sequential != labels_parallel) {
@@ -101,7 +105,6 @@ vector<int> KMeansClassifier::fit() {
 }
 
 pair<vector<int>, int> KMeansClassifier::fit_parallel() {
-    spdlog::debug("Starting parallel KMeans");
 
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -158,6 +161,9 @@ pair<vector<int>, int> KMeansClassifier::fit_parallel() {
     int iteration_count_parallel = 0;
 
     vector<int>labels;
+
+    spdlog::debug("Starting parallel KMeans in rank {}, working on {} datapoints, size: {}, count: {}, local count: {}, total elements: {}", rank,send_counts[rank],size,count,local_labels.capacity(),total_elements);
+
 
     // --- Ciclo KMeans ---
     while (iteration_count_parallel < max_iterations &&
@@ -229,13 +235,20 @@ pair<vector<int>, int> KMeansClassifier::fit_parallel() {
 
         labels = new_labels;
         iteration_count_parallel++;
-        MPI_Barrier(MPI_COMM_WORLD);
+        /*MPI_Barrier(MPI_COMM_WORLD);
+        if (iteration_count_parallel == 1 || iteration_count_parallel == max_iterations-1) {
+            spdlog::debug("local_centroids_history: {}", local_centroids_history[0]);
+            spdlog::debug("new_local_centroids_history: {}", new_local_centroids_history[0]);
+        }*/
+    }
+    /*spdlog::debug("local_centroids_history: {}", local_centroids_history[0]);
+    spdlog::debug("new_local_centroids_history: {}", new_local_centroids_history[0]);
+*/
+    if (rank == 0) {
+        spdlog::info("Finished parallel KMeans fit after {} iterations", iteration_count_parallel);
     }
 
-    if (rank == 0)
-    spdlog::info("Finished parallel KMeans fit after {} iterations", iteration_count_parallel);
-
-    MPI_Barrier(MPI_COMM_WORLD);
+    //MPI_Barrier(MPI_COMM_WORLD);
     return {labels, iteration_count_parallel};
 }
 
@@ -295,6 +308,7 @@ pair<vector<int>, int> KMeansClassifier::fit_sequential() {
         labels = new_labels;
         iteration_count_sequential++;
     }
+    //spdlog::debug("centroid: {}", centroids_history_sequential[centroids_history_sequential.size()-1][0][0]);
 
     spdlog::info("Finished sequential KMeans fit after {} iterations", iteration_count_sequential);
     return pair(labels, iteration_count_sequential);
