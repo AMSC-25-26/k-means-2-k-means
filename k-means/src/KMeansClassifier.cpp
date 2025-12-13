@@ -80,7 +80,6 @@ vector<int> KMeansClassifier::fit() {
     }
     }
 
-
     auto tp0 = std::chrono::high_resolution_clock::now();
     auto parallel_result = fit_parallel();
     auto tp1 = std::chrono::high_resolution_clock::now();
