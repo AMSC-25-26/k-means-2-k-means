@@ -9,10 +9,19 @@
 #include "data_io.cpp"
 #include "KMeansClassifier.h"
 #include "clustering_evaluator.cpp"
+#include <mpi.h>
 
 
-int main(const int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::debug);
+
+    int rank, size;
+    std::vector<std::vector<double> > content;
+    std::vector<std::string> true_labels;
+
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     if (argc < 4) {
         spdlog::error("Usage: {} <input_csv> <output_csv> <cluster_count> [true_labels_file]", argv[0]);
@@ -31,14 +40,13 @@ int main(const int argc, char *argv[]) {
         return 1;
     }
 
-    const std::vector<std::vector<double> > content = load_csv_dataset(input_filename);
+    content = load_csv_dataset(input_filename);
     if (content.empty()) {
         spdlog::error("Input dataset is empty or failed to load: {}", input_filename);
         return 1;
     }
 
     // Optional: load true labels if provided as 4th argument
-    std::vector<std::string> true_labels;
     if (argc >= 5) {
         const char *true_labels_file = argv[4];
         true_labels = load_label_file(true_labels_file);
@@ -59,7 +67,8 @@ int main(const int argc, char *argv[]) {
     KMeansClassifier kmeans(content, cluster_count);
     std::vector<int> labels = kmeans.fit();
 
-    save_csv_dataset(output_filename, content, labels);
+    if (rank==0) {
+        save_csv_dataset(output_filename, content, labels);
 
     if (!true_labels.empty()) {
         spdlog::info("Predicted {} labels; true labels provided for {} samples", labels.size(), true_labels.size());
@@ -67,6 +76,9 @@ int main(const int argc, char *argv[]) {
         double ami = adjusted_mutual_info<string>(true_labels, labels);
         spdlog::info("Adjusted Mutual Information (AMI): {:.6f}/1", ami);
     }
+    }
+
+    MPI_Finalize();
 
     return 0;
 }
