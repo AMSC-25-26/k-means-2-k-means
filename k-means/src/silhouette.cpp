@@ -119,4 +119,34 @@ namespace silhouette
 
         return total_silhouette / static_cast<double>(n_points);
     }
+
+    double complete_parallel(
+        const std::vector<std::vector<double>>& data,
+        const std::vector<int>& labels,
+        const int n_clusters
+    )
+    {
+        const size_t n_points = data.size();
+
+        // Input validation
+        if (n_points == 0 || data.size() != labels.size())
+        {
+            throw std::invalid_argument("Invalid input: empty data or size mismatch");
+        }
+
+        if (n_clusters < 2)
+        {
+            return 0.0; // Silhouette is undefined for single cluster
+        }
+
+        double total_silhouette = 0.0;
+
+        #pragma omp parallel for reduction(+:total_silhouette) schedule(dynamic)
+        for (size_t i = 0; i < n_points; ++i)
+        {
+            total_silhouette += calculate_point_silhouette(i, data, labels, n_clusters);
+        }
+
+        return total_silhouette / static_cast<double>(n_points);
+    }
 }
