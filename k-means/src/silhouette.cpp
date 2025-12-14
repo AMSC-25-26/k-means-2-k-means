@@ -9,15 +9,17 @@ namespace silhouette
     double euclidean_distance(const std::vector<double>& p1, const std::vector<double>& p2)
     {
         double sum = 0.0;
+        // For each dimension, find the difference
         for (size_t i = 0; i < p1.size(); ++i)
         {
             const double diff = p1[i] - p2[i];
-            sum += diff * diff;
+            sum += diff * diff;  // Square the difference and add it
         }
-        return std::sqrt(sum);
+        return std::sqrt(sum);  // Take square root to get final distance
     }
 
     // Calculate silhouette coefficient for a single point
+    // This measures how well one point fits in its cluster
     double calculate_point_silhouette(
         const size_t point_idx,
         const std::vector<std::vector<double>>& data,
@@ -28,44 +30,53 @@ namespace silhouette
         const auto& current_point = data[point_idx];
         const int point_cluster_id = labels[point_idx];
 
-        // a: Mean distance to other points in the same cluster (intra-cluster distance)
+        // a: Average distance to other points in the same cluster
         double avg_intra_cluster_dist = 0.0;
-        // b: Smallest mean distance to points in any other cluster (nearest-cluster distance)
+
+        // b: Average distance to points in the nearest other cluster
         double min_avg_inter_cluster_dist = std::numeric_limits<double>::max();
 
         size_t num_points_in_same_cluster = 0;
+
+        // Track distances to points in each cluster
         std::vector inter_cluster_distance_sums(n_clusters, 0.0);
         std::vector<size_t> inter_cluster_point_counts(n_clusters, 0);
 
+        // Look at every other point in the dataset
         for (size_t i = 0; i < data.size(); ++i)
         {
-            if (i == point_idx) continue;
+            if (i == point_idx) continue;  // Skip the point itself
 
             const double dist = euclidean_distance(current_point, data[i]);
             const int other_point_cluster_id = labels[i];
 
+            // Check if this other point is in the same cluster
             if (other_point_cluster_id == point_cluster_id)
             {
+                // Add distance to same-cluster total
                 avg_intra_cluster_dist += dist;
                 num_points_in_same_cluster++;
             }
             else
             {
+                // Add distance to different-cluster totals
                 inter_cluster_distance_sums[other_point_cluster_id] += dist;
                 inter_cluster_point_counts[other_point_cluster_id]++;
             }
         }
 
+        // Calculate average distance within the same cluster
         if (num_points_in_same_cluster > 0)
         {
             avg_intra_cluster_dist /= static_cast<double>(num_points_in_same_cluster);
         }
         else
         {
-            // If the point is the only one in its cluster, its silhouette score is 0.
+            // If the point is alone in its cluster, silhouette score is 0
             return 0.0;
         }
 
+        // Find the nearest other cluster (smallest average distance)
         for (int cluster_id = 0; cluster_id < n_clusters; ++cluster_id)
         {
             if (cluster_id != point_cluster_id && inter_cluster_point_counts[cluster_id] > 0)
@@ -79,12 +90,15 @@ namespace silhouette
             }
         }
 
+        // If there are no other clusters, return 0
         if (min_avg_inter_cluster_dist == std::numeric_limits<double>::max())
         {
             return 0.0;
         }
 
-        // Silhouette score is (b - a) / max(a, b)
+        // Silhouette formula: (b - a) / max(a, b)
+        // If b > a: point is closer to its own cluster (good)
+        // If a > b: point is closer to another cluster (bad)
         const double max_dist = std::max(avg_intra_cluster_dist, min_avg_inter_cluster_dist);
         if (max_dist == 0.0)
         {
@@ -94,6 +108,7 @@ namespace silhouette
         return (min_avg_inter_cluster_dist - avg_intra_cluster_dist) / max_dist;
     }
 
+    // Calculate complete silhouette score serially
     double complete_serial(
         const std::vector<std::vector<double>>& data,
         const std::vector<int>& labels,
@@ -102,26 +117,30 @@ namespace silhouette
     {
         const size_t n_points = data.size();
 
-        // Input validation
+        // Check if the input data is valid
         if (n_points == 0 || data.size() != labels.size())
         {
             throw std::invalid_argument("Invalid input: empty data or size mismatch");
         }
 
+        // Silhouette needs at least 2 clusters to compare
         if (n_clusters < 2)
         {
-            return 0.0; // Silhouette is undefined for single cluster
+            return 0.0;
         }
 
+        // Calculate silhouette for each point and add them up
         double total_silhouette = 0.0;
         for (size_t i = 0; i < n_points; ++i)
         {
             total_silhouette += calculate_point_silhouette(i, data, labels, n_clusters);
         }
 
+        // Return the average silhouette score
         return total_silhouette / static_cast<double>(n_points);
     }
 
+    // Calculate complete silhouette score in parallel
     double complete_parallel(
         const std::vector<std::vector<double>>& data,
         const std::vector<int>& labels,
@@ -130,28 +149,33 @@ namespace silhouette
     {
         const size_t n_points = data.size();
 
-        // Input validation
+        // Check if the input data is valid
         if (n_points == 0 || data.size() != labels.size())
         {
             throw std::invalid_argument("Invalid input: empty data or size mismatch");
         }
 
+        // Silhouette needs at least 2 clusters to compare
         if (n_clusters < 2)
         {
-            return 0.0; // Silhouette is undefined for single cluster
+            return 0.0;
         }
 
         double total_silhouette = 0.0;
 
+        // Use OpenMP to split the work automatically among threads
+        // Each thread calculates some points and adds to total_silhouette
         #pragma omp parallel for reduction(+:total_silhouette) schedule(dynamic)
         for (size_t i = 0; i < n_points; ++i)
         {
             total_silhouette += calculate_point_silhouette(i, data, labels, n_clusters);
         }
 
+        // Return the average silhouette score
         return total_silhouette / static_cast<double>(n_points);
     }
 
+    // Calculate approximate silhouette score serially using a random sample of the data
     double approximate_serial(
         const std::vector<std::vector<double>>& data,
         const std::vector<int>& labels,
@@ -161,30 +185,31 @@ namespace silhouette
     {
         const size_t n_points = data.size();
 
-        // Input validation
+        // Check if the input data is valid
         if (n_points == 0 || data.size() != labels.size())
         {
             throw std::invalid_argument("Invalid input: empty data or size mismatch");
         }
 
+        // Silhouette needs at least 2 clusters to compare
         if (n_clusters < 2)
         {
             return 0.0;
         }
 
-        // Use smaller of sample_size or n_points
+        // Don't sample more points than available
         const size_t actual_sample_size = std::min(sample_size, n_points);
 
-        // Create a vector with all indices [0, 1, ..., n_points-1]
+        // Create a list of all point indices: [0, 1, 2, ..., n_points-1]
         std::vector<size_t> all_indices(n_points);
         std::iota(all_indices.begin(), all_indices.end(), 0);
 
-        // Shuffle the indices to get a random order
+        // Shuffle the list to get random order
         std::random_device rd;
         std::mt19937 gen(rd());
         std::ranges::shuffle(all_indices, gen);
 
-        // The first `actual_sample_size` elements are our random sample.
+        // Take the first 'actual_sample_size' points as random sample
         double total_silhouette = 0.0;
         for (size_t i = 0; i < actual_sample_size; ++i)
         {
@@ -192,9 +217,11 @@ namespace silhouette
             total_silhouette += calculate_point_silhouette(idx, data, labels, n_clusters);
         }
 
+        // Return average based on sample size (not total points)
         return total_silhouette / static_cast<double>(actual_sample_size);
     }
 
+    // Calculate approximate silhouette score in parallel using a random sample of the data
     double approximate_parallel(
         const std::vector<std::vector<double>>& data,
         const std::vector<int>& labels,
@@ -204,32 +231,34 @@ namespace silhouette
     {
         const size_t n_points = data.size();
 
-        // Input validation
+        // Check if the input data is valid
         if (n_points == 0 || data.size() != labels.size())
         {
             throw std::invalid_argument("Invalid input: empty data or size mismatch");
         }
 
+        // Silhouette needs at least 2 clusters to compare
         if (n_clusters < 2)
         {
             return 0.0;
         }
 
-        // Use smaller of sample_size or n_points
         const size_t actual_sample_size = std::min(sample_size, n_points);
 
-        // Create a vector with all indices [0, 1, ..., n_points-1]
+        // Create a list of all point indices: [0, 1, 2, ..., n_points-1]
         std::vector<size_t> all_indices(n_points);
         std::iota(all_indices.begin(), all_indices.end(), 0);
 
-        // Shuffle the indices to get a random order
+        // Shuffle the list to get random order
         std::random_device rd;
         std::mt19937 gen(rd());
         std::ranges::shuffle(all_indices, gen);
 
-        // The first `actual_sample_size` elements are our random sample.
+        // Take the first 'actual_sample_size' points as our random sample
         double total_silhouette = 0.0;
 
+        // Use OpenMP to split the work automatically among threads
+        // Each thread calculates some points and adds to total_silhouette
         #pragma omp parallel for reduction(+:total_silhouette) schedule(dynamic)
         for (size_t i = 0; i < actual_sample_size; ++i)
         {
@@ -237,6 +266,7 @@ namespace silhouette
             total_silhouette += calculate_point_silhouette(idx, data, labels, n_clusters);
         }
 
+        // Return average based on sample size (not total points)
         return total_silhouette / static_cast<double>(actual_sample_size);
     }
 }
