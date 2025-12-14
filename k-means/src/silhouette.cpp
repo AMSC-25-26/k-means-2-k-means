@@ -1,7 +1,7 @@
 #include "silhouette.hpp"
 #include <cmath>
 #include <random>
-#include <unordered_set>
+#include <algorithm>
 
 namespace silhouette
 {
@@ -175,24 +175,20 @@ namespace silhouette
         // Use smaller of sample_size or n_points
         const size_t actual_sample_size = std::min(sample_size, n_points);
 
-        // Random sampling without replacement
-        std::vector<size_t> sample_indices;
-        sample_indices.reserve(actual_sample_size);
+        // Create a vector with all indices [0, 1, ..., n_points-1]
+        std::vector<size_t> all_indices(n_points);
+        std::iota(all_indices.begin(), all_indices.end(), 0);
 
+        // Shuffle the indices to get a random order
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<size_t> dist(0, n_points - 1);
+        std::ranges::shuffle(all_indices, gen);
 
-        std::unordered_set<size_t> selected;
-        while (selected.size() < actual_sample_size)
-        {
-            selected.insert(dist(gen));
-        }
-        sample_indices.assign(selected.begin(), selected.end());
-
+        // The first `actual_sample_size` elements are our random sample.
         double total_silhouette = 0.0;
-        for (const size_t idx : sample_indices)
+        for (size_t i = 0; i < actual_sample_size; ++i)
         {
+            const size_t idx = all_indices[i];
             total_silhouette += calculate_point_silhouette(idx, data, labels, n_clusters);
         }
 
@@ -222,26 +218,22 @@ namespace silhouette
         // Use smaller of sample_size or n_points
         const size_t actual_sample_size = std::min(sample_size, n_points);
 
-        // Random sampling without replacement
-        std::vector<size_t> sample_indices;
-        sample_indices.reserve(actual_sample_size);
+        // Create a vector with all indices [0, 1, ..., n_points-1]
+        std::vector<size_t> all_indices(n_points);
+        std::iota(all_indices.begin(), all_indices.end(), 0);
 
+        // Shuffle the indices to get a random order
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<size_t> dist(0, n_points - 1);
+        std::ranges::shuffle(all_indices, gen);
 
-        std::unordered_set<size_t> selected;
-        while (selected.size() < actual_sample_size)
-        {
-            selected.insert(dist(gen));
-        }
-        sample_indices.assign(selected.begin(), selected.end());
-
+        // The first `actual_sample_size` elements are our random sample.
         double total_silhouette = 0.0;
 
         #pragma omp parallel for reduction(+:total_silhouette) schedule(dynamic)
-        for (const size_t idx : sample_indices)
+        for (size_t i = 0; i < actual_sample_size; ++i)
         {
+            const size_t idx = all_indices[i];
             total_silhouette += calculate_point_silhouette(idx, data, labels, n_clusters);
         }
 
