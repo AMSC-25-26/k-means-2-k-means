@@ -1,4 +1,4 @@
-#include "silhouette.h"
+#include "silhouette.hpp"
 #include <cmath>
 
 namespace silhouette
