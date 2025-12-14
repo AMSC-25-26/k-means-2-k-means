@@ -1,5 +1,7 @@
 #include "silhouette.hpp"
 #include <cmath>
+#include <random>
+#include <unordered_set>
 
 namespace silhouette
 {
@@ -148,5 +150,101 @@ namespace silhouette
         }
 
         return total_silhouette / static_cast<double>(n_points);
+    }
+
+    double approximate_serial(
+        const std::vector<std::vector<double>>& data,
+        const std::vector<int>& labels,
+        const int n_clusters,
+        const size_t sample_size
+    )
+    {
+        const size_t n_points = data.size();
+
+        // Input validation
+        if (n_points == 0 || data.size() != labels.size())
+        {
+            throw std::invalid_argument("Invalid input: empty data or size mismatch");
+        }
+
+        if (n_clusters < 2)
+        {
+            return 0.0;
+        }
+
+        // Use smaller of sample_size or n_points
+        const size_t actual_sample_size = std::min(sample_size, n_points);
+
+        // Random sampling without replacement
+        std::vector<size_t> sample_indices;
+        sample_indices.reserve(actual_sample_size);
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<size_t> dist(0, n_points - 1);
+
+        std::unordered_set<size_t> selected;
+        while (selected.size() < actual_sample_size)
+        {
+            selected.insert(dist(gen));
+        }
+        sample_indices.assign(selected.begin(), selected.end());
+
+        double total_silhouette = 0.0;
+        for (const size_t idx : sample_indices)
+        {
+            total_silhouette += calculate_point_silhouette(idx, data, labels, n_clusters);
+        }
+
+        return total_silhouette / static_cast<double>(actual_sample_size);
+    }
+
+    double approximate_parallel(
+        const std::vector<std::vector<double>>& data,
+        const std::vector<int>& labels,
+        const int n_clusters,
+        const size_t sample_size
+    )
+    {
+        const size_t n_points = data.size();
+
+        // Input validation
+        if (n_points == 0 || data.size() != labels.size())
+        {
+            throw std::invalid_argument("Invalid input: empty data or size mismatch");
+        }
+
+        if (n_clusters < 2)
+        {
+            return 0.0;
+        }
+
+        // Use smaller of sample_size or n_points
+        const size_t actual_sample_size = std::min(sample_size, n_points);
+
+        // Random sampling without replacement
+        std::vector<size_t> sample_indices;
+        sample_indices.reserve(actual_sample_size);
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<size_t> dist(0, n_points - 1);
+
+        std::unordered_set<size_t> selected;
+        while (selected.size() < actual_sample_size)
+        {
+            selected.insert(dist(gen));
+        }
+        sample_indices.assign(selected.begin(), selected.end());
+
+        double total_silhouette = 0.0;
+
+        #pragma omp parallel for reduction(+:total_silhouette) schedule(dynamic)
+        for (const size_t idx : sample_indices)
+        {
+            total_silhouette += calculate_point_silhouette(idx, data, labels, n_clusters);
+        }
+
+        return total_silhouette / static_cast<double>(actual_sample_size);
     }
 }
