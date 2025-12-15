@@ -2,6 +2,7 @@
 #include <cmath>
 #include <random>
 #include <algorithm>
+#include <stdexcept>
 
 namespace silhouette
 {
