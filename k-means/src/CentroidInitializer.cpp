@@ -1,5 +1,5 @@
 // CentroidInitializer.cpp
-#include "CentroidInitializer.h"
+#include "CentroidInitializer.hpp"
 #include <iostream>
 #include <limits>
 #include <cmath>
