@@ -26,6 +26,7 @@ add_executable(
         src/main.cpp
         src/KMeansClassifier.cpp
         src/CentroidInitializer.cpp
+        src/silhouette.cpp
 )
 
 target_include_directories(k_means PRIVATE ${rapidcsv_SOURCE_DIR}/src)
