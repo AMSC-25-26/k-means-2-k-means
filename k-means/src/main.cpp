@@ -1,14 +1,10 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <fstream>
-#include <sstream>
-#include <algorithm>
-#include <cctype>
 #include <spdlog/spdlog.h>
 #include "data_io.cpp"
 #include "KMeansClassifier.hpp"
-#include "clustering_evaluator.cpp"
+#include "silhouette.hpp"
 #include <mpi.h>
 
 using namespace std;
@@ -17,7 +13,6 @@ int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::debug);
 
     int rank, size;
-    vector<string> true_labels;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -29,7 +24,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (argc < 4) {
-        spdlog::error("Usage: {} <input_csv> <output_csv> <cluster_count> [true_labels_file]", argv[0]);
+        spdlog::error("Usage: {} <input_csv> <output_csv> <cluster_count>", argv[0]);
         return 1;
     }
 
@@ -51,35 +46,22 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Optional: load true labels if provided as 4th argument
-    if (argc >= 5) {
-        const char *true_labels_file = argv[4];
-        true_labels = load_label_file(true_labels_file);
-
-        if (true_labels.empty()) {
-            spdlog::error("No labels loaded from {}", true_labels_file);
-            return 1;
-        }
-
-        if (true_labels.size() != content.size()) {
-            spdlog::error("Label count ({}) does not match number of samples ({})", true_labels.size(), content.size());
-            return 1;
-        }
-
-        spdlog::info("Loaded true labels from {}", true_labels_file);
-    }
-
     KMeansClassifier kmeans(content, cluster_count);
     vector<int> labels = kmeans.fit();
 
     if (rank == 0) {
         save_csv_dataset(output_filename, content, labels);
 
-        if (!true_labels.empty()) {
-            spdlog::info("Predicted {} labels; true labels provided for {} samples", labels.size(), true_labels.size());
-            // Further evaluation (e.g., AMI) can be added here using the loaded true_labels.
-            double ami = adjusted_mutual_info<string>(true_labels, labels);
-            spdlog::info("Adjusted Mutual Information (AMI): {:.6f}/1", ami);
+        // Compute silhouette score for the clustering and log it.
+        try {
+            double sil = silhouette::complete_serial(content, labels, cluster_count);
+            spdlog::info("Silhouette score: {:.6f}", sil);
+            // Warn if silhouette score is low (threshold 0.25 chosen as a heuristic)
+            if (sil < 0.25) {
+                spdlog::warn("Low silhouette score ({:.6f}). Consider revising the number of clusters, initialization, or preprocessing (scaling/feature selection).", sil);
+            }
+        } catch (const exception &e) {
+            spdlog::error("Failed to compute silhouette score: {}", e.what());
         }
     }
 

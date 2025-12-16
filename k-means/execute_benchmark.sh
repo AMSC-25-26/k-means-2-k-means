@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DATASET=./data/dataset-wine.csv
-K=11
+DATASET=./data/dataset-iris.csv
+K=3
 GT=./data/wine-clusters.csv
 BUILD=./cmake-build-debug/k_means
 
-for n in 1 2 4 8; do
+for n in 1 2 3 4 5 6 7 8; do
   echo "----- Running with n=${n} -----"
   start=$(date +%s.%N)
 
-  # pass /dev/stdout so the program prints its output to the terminal
-  mpiexec -n "${n}" "${BUILD}" "${DATASET}" /dev/null "${K}" "${GT}"
+  # Run the program but suppress all output (stdout and stderr) so we only
+  # measure elapsed time and the exit code below.
+  mpiexec -np "${n}" "${BUILD}" "${DATASET}" /dev/null "${K}" "${GT}" > /dev/null #2>&1
   rc=$?
 
   end=$(date +%s.%N)
