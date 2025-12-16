@@ -14,28 +14,26 @@
 using namespace std;
 
 void KMeansClassifier::set_initial_centroids() {
-
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if (rank == 0) {
         auto initial_centroids = CentroidInitializer::initialize_centroids(data, cluster_count, 42);
 
-    // Salva i centroidi iniziali nella cronologia sequenziale e parallela
-    centroids_history_sequential.back() = initial_centroids;
-    centroids_history_parallel.back() = initial_centroids;
+        // Salva i centroidi iniziali nella cronologia sequenziale e parallela
+        centroids_history_sequential.back() = initial_centroids;
+        centroids_history_parallel.back() = initial_centroids;
 
-    // vettore lineare compatibile con MPI
-    local_centroids_history.clear();
-    for (int i = 0; i < cluster_count; i++) {
-        for (int j = 0; j < data[0].size(); j++) {
-            local_centroids_history.push_back(initial_centroids[i][j]);
+        // vettore lineare compatibile con MPI
+        local_centroids_history.clear();
+        for (int i = 0; i < cluster_count; i++) {
+            for (int j = 0; j < data[0].size(); j++) {
+                local_centroids_history.push_back(initial_centroids[i][j]);
+            }
         }
-    }
 
-    // Imposta dimensione  dei centroidi
-    size_lch = static_cast<int>(local_centroids_history.size());
-
+        // Imposta dimensione  dei centroidi
+        size_lch = static_cast<int>(local_centroids_history.size());
     }
 
     // Broadcast della dimensione
@@ -51,7 +49,7 @@ void KMeansClassifier::set_initial_centroids() {
     // Broadcast dei centroidi iniziali
     MPI_Bcast(local_centroids_history.data(), size_lch, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(new_local_centroids_history.data(), size_lch, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&cluster_count,1,MPI_INT,0,MPI_COMM_WORLD);
+    MPI_Bcast(&cluster_count, 1,MPI_INT, 0,MPI_COMM_WORLD);
 
     if (rank == 0) {
         spdlog::debug("Centroids initialized via K-Means++");
@@ -70,20 +68,20 @@ vector<int> KMeansClassifier::fit() {
 
     if (rank == 0) {
         if constexpr (PERFORM_SEQUENTIAL_KMEANS) {
-        auto t0 = std::chrono::high_resolution_clock::now();
-        auto sequential_result = fit_sequential();
-        auto t1 = std::chrono::high_resolution_clock::now();
-        sequential_time = std::chrono::duration<double, std::milli>(t1 - t0).count();
-        labels_sequential = sequential_result.first;
-        iteration_count_sequential = sequential_result.second;
-        spdlog::info("Sequential KMeans took {:.3f} ms", sequential_time);
-    }
+            auto t0 = chrono::high_resolution_clock::now();
+            auto sequential_result = fit_sequential();
+            auto t1 = chrono::high_resolution_clock::now();
+            sequential_time = chrono::duration<double, milli>(t1 - t0).count();
+            labels_sequential = sequential_result.first;
+            iteration_count_sequential = sequential_result.second;
+            spdlog::info("Sequential KMeans took {:.3f} ms", sequential_time);
+        }
     }
 
-    auto tp0 = std::chrono::high_resolution_clock::now();
+    auto tp0 = chrono::high_resolution_clock::now();
     auto parallel_result = fit_parallel();
-    auto tp1 = std::chrono::high_resolution_clock::now();
-    parallel_time = std::chrono::duration<double, std::milli>(tp1 - tp0).count();
+    auto tp1 = chrono::high_resolution_clock::now();
+    parallel_time = chrono::duration<double, milli>(tp1 - tp0).count();
     labels_parallel = parallel_result.first;
     iteration_count_parallel = parallel_result.second;
 
@@ -94,17 +92,16 @@ vector<int> KMeansClassifier::fit() {
 
     if (rank == 0) {
         if (labels_sequential != labels_parallel) {
-        spdlog::warn("KMeans sequential and parallel results differ!");
-    } else if constexpr (PERFORM_SEQUENTIAL_KMEANS) {
-        spdlog::debug("KMeans sequential and parallel results match.");
-    }
+            spdlog::warn("KMeans sequential and parallel results differ!");
+        } else if constexpr (PERFORM_SEQUENTIAL_KMEANS) {
+            spdlog::debug("KMeans sequential and parallel results match.");
+        }
     }
     // Compare results
     return labels_parallel;
 }
 
 pair<vector<int>, int> KMeansClassifier::fit_parallel() {
-
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -159,23 +156,25 @@ pair<vector<int>, int> KMeansClassifier::fit_parallel() {
 
     int iteration_count_parallel = 0;
 
-    vector<int>labels;
+    vector<int> labels;
 
-    spdlog::debug("Starting parallel KMeans in rank {}, working on {} datapoints, size: {}, local count: {}, total elements: {}", rank,send_counts[rank],size,local_labels.capacity(),total_elements);
+    spdlog::debug(
+        "Starting parallel KMeans in rank {}, working on {} datapoints, size: {}, local count: {}, total elements: {}",
+        rank, send_counts[rank], size, local_labels.capacity(), total_elements);
 
 
     // --- Ciclo KMeans ---
     while (iteration_count_parallel < max_iterations &&
            (iteration_count_parallel == 0 || local_centroids_history != new_local_centroids_history)) {
-
         // Assegna label ai dati locali
         for (size_t i = 0; i < local_labels.size(); i++) {
-            double min_dist = std::numeric_limits<double>::max();
+            double min_dist = numeric_limits<double>::max();
             int best_cluster = -1;
             for (int c = 0; c < cluster_count; c++) {
                 double dist = 0.0;
                 for (int d = 0; d < dimensions; d++)
-                    dist += pow(local_data_vector[i * dimensions + d] - new_local_centroids_history[c * dimensions + d], 2);
+                    dist += pow(local_data_vector[i * dimensions + d] - new_local_centroids_history[c * dimensions + d],
+                                2);
                 if (dist < min_dist) {
                     min_dist = dist;
                     best_cluster = c;
@@ -206,7 +205,7 @@ pair<vector<int>, int> KMeansClassifier::fit_parallel() {
 
         // --- Aggiorna centroidi (solo rank 0) ---
         if (rank == 0) {
-            vector<vector<double>> new_centroids(cluster_count, vector<double>(dimensions, 0.0));
+            vector<vector<double> > new_centroids(cluster_count, vector<double>(dimensions, 0.0));
             vector<int> counts(cluster_count, 0);
             for (size_t i = 0; i < data.size(); i++) {
                 int cluster = new_labels[i];
@@ -266,7 +265,7 @@ pair<vector<int>, int> KMeansClassifier::fit_sequential() {
         vector<int> new_labels(data.size());
 
         for (size_t i = 0; i < data.size(); i++) {
-            double min_dist = std::numeric_limits<double>::max();
+            double min_dist = numeric_limits<double>::max();
 
             int best_cluster = -1;
             for (int c = 0; c < cluster_count; c++) {

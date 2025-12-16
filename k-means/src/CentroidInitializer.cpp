@@ -9,17 +9,15 @@
 
 using namespace std;
 
-vector<vector<double>> CentroidInitializer::initialize_centroids(
-    const vector<vector<double>>& data,
+vector<vector<double> > CentroidInitializer::initialize_centroids(
+    const vector<vector<double> > &data,
     int k,
     // InitializationMethod method,
     int seed
-)
-{
+) {
     mt19937 gen(seed); //Generatore di numeri casuali tramite Mersene Twister
 
-    if (data.empty() || k <= 0 || k > data.size())
-    {
+    if (data.empty() || k <= 0 || k > data.size()) {
         spdlog::error("Invalid parameters for centroid initialization");
         return {};
     }
@@ -64,13 +62,12 @@ vector<vector<double>> CentroidInitializer::init_random(
 // 1. Scegliamo il primo centroide a caso.
 // 2. Per ogni punto, calcoliamo la distanza (quadrata) dal centroide più vicino già scelto.
 // 3. Scegliamo il prossimo centroide con probabilità proporzionale a quella distanza.
-vector<vector<double>> CentroidInitializer::init_kmeans_plus_plus(
-    const vector<vector<double>>& data,
+vector<vector<double> > CentroidInitializer::init_kmeans_plus_plus(
+    const vector<vector<double> > &data,
     int k,
-    mt19937& gen
-)
-{
-    vector<vector<double>> centroids;
+    mt19937 &gen
+) {
+    vector<vector<double> > centroids;
     size_t n_samples = data.size();
 
     // Scegliamo il primo centroide a caso
@@ -81,24 +78,20 @@ vector<vector<double>> CentroidInitializer::init_kmeans_plus_plus(
     vector<double> min_dist_sq(n_samples, numeric_limits<double>::max());
 
     // Troviamo i restanti k-1 centroidi tramite un loop
-    for (int i = 1; i < k; ++i)
-    {
+    for (int i = 1; i < k; ++i) {
         double sum_dist_sq = 0.0;
 
         // Aggiungiamo le distanze minime
-        for (size_t j = 0; j < n_samples; ++j)
-        {
+        for (size_t j = 0; j < n_samples; ++j) {
             // Calcoliamo la distanza dall'ultimo centroide aggiunto, e aggiorniamo la distanza minima se necessario
             double dist_sq = 0.0;
-            for (size_t dim = 0; dim < data[j].size(); ++dim)
-            {
+            for (size_t dim = 0; dim < data[j].size(); ++dim) {
                 double diff = data[j][dim] - centroids.back()[dim];
                 dist_sq += diff * diff;
             }
 
             // Manteniamo la minima distanza trovata finora tra tutti i centroidi
-            if (dist_sq < min_dist_sq[j])
-            {
+            if (dist_sq < min_dist_sq[j]) {
                 min_dist_sq[j] = dist_sq;
             }
             sum_dist_sq += min_dist_sq[j];
@@ -110,11 +103,9 @@ vector<vector<double>> CentroidInitializer::init_kmeans_plus_plus(
         double cumulative_sum = 0.0;
         int selected_index = -1;
 
-        for (size_t j = 0; j < n_samples; ++j)
-        {
+        for (size_t j = 0; j < n_samples; ++j) {
             cumulative_sum += min_dist_sq[j];
-            if (cumulative_sum >= random_val)
-            {
+            if (cumulative_sum >= random_val) {
                 selected_index = j;
                 break;
             }

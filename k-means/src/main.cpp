@@ -11,13 +11,13 @@
 #include "clustering_evaluator.cpp"
 #include <mpi.h>
 
+using namespace std;
 
 int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::debug);
 
     int rank, size;
-    std::vector<std::vector<double> > content;
-    std::vector<std::string> true_labels;
+    vector<string> true_labels;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -38,14 +38,14 @@ int main(int argc, char *argv[]) {
 
     int cluster_count = 0;
     try {
-        cluster_count = std::stoi(argv[3]);
-        if (cluster_count <= 0) throw std::invalid_argument("non-positive");
-    } catch (const std::exception &) {
+        cluster_count = stoi(argv[3]);
+        if (cluster_count <= 0) throw invalid_argument("non-positive");
+    } catch (const exception &) {
         spdlog::error("Invalid cluster count: {}", argv[3]);
         return 1;
     }
 
-    content = load_csv_dataset(input_filename);
+    vector<vector<double> > content = load_csv_dataset(input_filename);
     if (content.empty()) {
         spdlog::error("Input dataset is empty or failed to load: {}", input_filename);
         return 1;
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     }
 
     KMeansClassifier kmeans(content, cluster_count);
-    std::vector<int> labels = kmeans.fit();
+    vector<int> labels = kmeans.fit();
 
     if (rank == 0) {
         save_csv_dataset(output_filename, content, labels);
