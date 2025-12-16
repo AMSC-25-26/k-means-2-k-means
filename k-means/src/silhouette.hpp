@@ -11,8 +11,7 @@
  * - Values close to 0 mean the point is on the border between two clusters
  * - Values close to -1 mean the point might be in the wrong cluster
  */
-namespace silhouette
-{
+namespace silhouette {
     /**
      * Calculate the straight-line distance between two points
      *
@@ -20,7 +19,7 @@ namespace silhouette
      * @param p2 Second point
      * @return The distance between the two points
      */
-    double euclidean_distance(const std::vector<double>& p1, const std::vector<double>& p2);
+    double euclidean_distance(const std::vector<double> &p1, const std::vector<double> &p2);
 
     /**
      * Calculate silhouette score for all data points (single-threaded).
@@ -32,8 +31,8 @@ namespace silhouette
      * @return Average silhouette score (between -1 and +1)
      */
     double complete_serial(
-        const std::vector<std::vector<double>>& data,
-        const std::vector<int>& labels,
+        const std::vector<std::vector<double> > &data,
+        const std::vector<int> &labels,
         int n_clusters
     );
 
@@ -47,8 +46,8 @@ namespace silhouette
      * @return Average silhouette score (between -1 and +1)
      */
     double complete_parallel(
-        const std::vector<std::vector<double>>& data,
-        const std::vector<int>& labels,
+        const std::vector<std::vector<double> > &data,
+        const std::vector<int> &labels,
         int n_clusters
     );
 
@@ -63,8 +62,8 @@ namespace silhouette
      * @return Estimated average silhouette score (between -1 and +1)
      */
     double approximate_serial(
-        const std::vector<std::vector<double>>& data,
-        const std::vector<int>& labels,
+        const std::vector<std::vector<double> > &data,
+        const std::vector<int> &labels,
         int n_clusters,
         size_t sample_size
     );
@@ -80,8 +79,8 @@ namespace silhouette
      * @return Estimated average silhouette score (between -1 and +1)
      */
     double approximate_parallel(
-        const std::vector<std::vector<double>>& data,
-        const std::vector<int>& labels,
+        const std::vector<std::vector<double> > &data,
+        const std::vector<int> &labels,
         int n_clusters,
         size_t sample_size
     );
@@ -97,8 +96,8 @@ namespace silhouette
      */
     double calculate_point_silhouette(
         size_t point_idx,
-        const std::vector<std::vector<double>>& data,
-        const std::vector<int>& labels,
+        const std::vector<std::vector<double> > &data,
+        const std::vector<int> &labels,
         int n_clusters
     );
 }
