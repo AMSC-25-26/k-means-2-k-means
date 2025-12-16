@@ -1,4 +1,10 @@
 cmake_minimum_required(VERSION 3.28.3)
+
+execute_process(COMMAND which mpic++ OUTPUT_VARIABLE _MPICXX OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+if(_MPICXX)
+    set(CMAKE_CXX_COMPILER ${_MPICXX} CACHE FILEPATH "MPI C++ compiler" FORCE)
+endif()
+
 project(k_means)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -65,12 +71,6 @@ else ()
     find_package(MPI REQUIRED)
     if (MPI_CXX_FOUND)
         target_link_libraries(k_means PRIVATE MPI::MPI_CXX)
-
-        # Ensure system OpenMPI include is available (fallback)
-        set(OPENMPI_SYS_INCLUDE "/usr/lib/x86_64-linux-gnu/openmpi/include")
-        if (EXISTS ${OPENMPI_SYS_INCLUDE})
-            target_include_directories(k_means PRIVATE ${OPENMPI_SYS_INCLUDE})
-        endif ()
     endif ()
 
     target_link_libraries(k_means PRIVATE spdlog::spdlog stdc++exp)

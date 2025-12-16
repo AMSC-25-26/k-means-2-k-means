@@ -23,6 +23,11 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+    // Debug print MPI info
+    if (rank == 0) {
+        spdlog::debug("MPI initialized with {} available threads", size);
+    }
+
     if (argc < 4) {
         spdlog::error("Usage: {} <input_csv> <output_csv> <cluster_count> [true_labels_file]", argv[0]);
         return 1;
