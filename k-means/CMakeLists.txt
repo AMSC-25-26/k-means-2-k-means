@@ -65,9 +65,14 @@ else ()
     find_package(MPI REQUIRED)
     if (MPI_CXX_FOUND)
         target_link_libraries(k_means PRIVATE MPI::MPI_CXX)
-    endif()
 
-    # Link your executable to the DataFrame target provided by the project
+        # Ensure system OpenMPI include is available (fallback)
+        set(OPENMPI_SYS_INCLUDE "/usr/lib/x86_64-linux-gnu/openmpi/include")
+        if (EXISTS ${OPENMPI_SYS_INCLUDE})
+            target_include_directories(k_means PRIVATE ${OPENMPI_SYS_INCLUDE})
+        endif ()
+    endif ()
+
     target_link_libraries(k_means PRIVATE spdlog::spdlog stdc++exp)
 endif ()
 

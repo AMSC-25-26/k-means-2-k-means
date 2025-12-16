@@ -67,15 +67,15 @@ int main(int argc, char *argv[]) {
     KMeansClassifier kmeans(content, cluster_count);
     std::vector<int> labels = kmeans.fit();
 
-    if (rank==0) {
+    if (rank == 0) {
         save_csv_dataset(output_filename, content, labels);
 
-    if (!true_labels.empty()) {
-        spdlog::info("Predicted {} labels; true labels provided for {} samples", labels.size(), true_labels.size());
-        // Further evaluation (e.g., AMI) can be added here using the loaded true_labels.
-        double ami = adjusted_mutual_info<string>(true_labels, labels);
-        spdlog::info("Adjusted Mutual Information (AMI): {:.6f}/1", ami);
-    }
+        if (!true_labels.empty()) {
+            spdlog::info("Predicted {} labels; true labels provided for {} samples", labels.size(), true_labels.size());
+            // Further evaluation (e.g., AMI) can be added here using the loaded true_labels.
+            double ami = adjusted_mutual_info<string>(true_labels, labels);
+            spdlog::info("Adjusted Mutual Information (AMI): {:.6f}/1", ami);
+        }
     }
 
     MPI_Finalize();
