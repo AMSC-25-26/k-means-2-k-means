@@ -7,7 +7,7 @@
 #include <cctype>
 #include <spdlog/spdlog.h>
 #include "data_io.cpp"
-#include "KMeansClassifier.h"
+#include "KMeansClassifier.hpp"
 #include "clustering_evaluator.cpp"
 #include <mpi.h>
 

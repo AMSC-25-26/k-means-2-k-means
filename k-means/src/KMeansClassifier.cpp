@@ -2,12 +2,12 @@
 // Created by emiliodallatorre on 06/12/25.
 //
 
-#include "KMeansClassifier.h"
+#include "KMeansClassifier.hpp"
 #include "spdlog/spdlog.h"
 #include <limits>
 #include <iostream>
 #include <mpi.h>
-#include "CentroidInitializer.h"
+#include "CentroidInitializer.hpp"
 #include "omp.h"
 
 
