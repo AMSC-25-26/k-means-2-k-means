@@ -1,4 +1,4 @@
-k-means (MPI) — midterm project
+k-means (MPI)
 =================================
 
 Purpose
