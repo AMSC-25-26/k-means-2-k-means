@@ -109,7 +109,6 @@ Reproducibility & test datasets
 
 Contact / notes for the professor
 - This is the midterm project implementation: MPI K‑Means and silhouette-based evaluation.
-- If you want, I can add a short results section with measured silhouette scores and timings for the provided datasets and different process counts.
 
 ---
-Created for the course midterm. If you want an expanded report (plots, tables, or command outputs), tell me which dataset and process counts to run and I will produce them.
+Created for the course midterm. 
