@@ -108,48 +108,60 @@ vector<int> KMeansClassifier::fit() {
 }
 
 pair<vector<int>, int> KMeansClassifier::fit_parallel() {
+    // Get MPI rank (process ID) and size (total number of processes)
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+    // Get the number of dimensions from the data
     int dimensions = 0;
     if (rank == 0) {
         dimensions = static_cast<int>(data[0].size());
     }
 
-    // --- Prepara il vettore lineare dei dati solo rank 0 ---
+    // Prepare a flat vector of all data points (only on rank 0)
+    // This converts 2D data into 1D: [[x1,y1], [x2,y2]] -> [x1,y1,x2,y2]
     vector<double> data_single_vector;
+    int num_points = 0;
     if (rank == 0) {
-        data_single_vector.resize(data.size() * dimensions);
+        num_points = static_cast<int>(data.size());
+        data_single_vector.resize(num_points * dimensions);
         for (size_t i = 0; i < data.size(); i++)
             for (int j = 0; j < dimensions; j++)
                 data_single_vector[i * dimensions + j] = data[i][j];
     }
 
-    // Condividi dimensioni dei dati
+    // Share the dimensions and number of points to all processes
     MPI_Bcast(&dimensions, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&num_points, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // Count totale degli elementi (double)
-    int total_elements = rank == 0 ? static_cast<int>(data_single_vector.size()) : 0;
-    MPI_Bcast(&total_elements, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    // Calculate how many complete data points each process will get
+    // Complete data points must be distributed, not individual values
+    // This ensures a point [x,y,z] stays together on one process instead of being split
+    const int points_per_proc = num_points / size;
+    const int remainder_points = num_points % size;
 
-    const int count = total_elements / size;
-    const int remainder = total_elements % size;
-
-    // --- Preparazione indici e quantità per Scatterv ---
+    // Prepare arrays for MPI_Scatterv
+    // send_counts[i] = how many doubles process i will receive
+    // send_start_idx[i] = starting index in the data array for process i
     vector<int> send_counts(size), send_start_idx(size);
     int start = 0;
     for (int i = 0; i < size; i++) {
-        send_counts[i] = count + (i < remainder ? 1 : 0);
+        // Some processes get one extra point if there's a remainder
+        const int points_for_this_proc = points_per_proc + (i < remainder_points ? 1 : 0);
+
+        // Convert number of points to number of doubles (multiply by dimensions)
+        send_counts[i] = points_for_this_proc * dimensions;
         send_start_idx[i] = start;
         start += send_counts[i];
     }
 
-    // --- Alloca buffer locale ---
+    // Allocate local buffer to receive this process's share of data
     const int local_count = send_counts[rank];
     vector<double> local_data_vector(local_count);
 
-    // Scatter dei dati
+    // Scatter: distribute data from rank 0 to all processes
+    // Each process gets its chunk of complete data points
     MPI_Scatterv(rank == 0 ? data_single_vector.data() : nullptr,
                  send_counts.data(),
                  send_start_idx.data(),
@@ -160,25 +172,28 @@ pair<vector<int>, int> KMeansClassifier::fit_parallel() {
                  0,
                  MPI_COMM_WORLD);
 
-    // --- Labels locali ---
-    vector<int> local_labels(local_count / dimensions);
+    // Calculate how many complete data points this process has
+    const int local_num_points = local_count / dimensions;
+    vector<int> local_labels(local_num_points);
 
     iteration_count_parallel = 0;
 
     vector<int> labels;
 
     spdlog::debug(
-        "Starting parallel KMeans in rank {}, working on {} datapoints, size: {}, local count: {}, total elements: {}",
-        rank, send_counts[rank], size, static_cast<int>(local_labels.capacity()), total_elements);
+        "Starting parallel KMeans in rank {}, working on {} datapoints, dimensions: {}, local count: {}, total points: {}",
+        rank, local_num_points, dimensions, local_count, num_points);
 
+    bool converged = false;
 
-    // --- Ciclo KMeans ---
-    while (iteration_count_parallel < max_iterations &&
-           (iteration_count_parallel == 0 || local_centroids_history != new_local_centroids_history)) {
-        // Assegna label ai dati locali
-        for (size_t i = 0; i < local_labels.size(); i++) {
+    // Main K-Means loop
+    while (iteration_count_parallel < max_iterations && !converged) {
+        // Step 1: Assign cluster labels to local data points
+        // Each process works on its own chunk of data
+        for (int i = 0; i < local_num_points; i++) {
             double min_dist = numeric_limits<double>::max();
             int best_cluster = -1;
+            // Find the closest centroid for this data point
             for (int c = 0; c < cluster_count; c++) {
                 double dist = 0.0;
                 for (int d = 0; d < dimensions; d++)
@@ -192,7 +207,8 @@ pair<vector<int>, int> KMeansClassifier::fit_parallel() {
             local_labels[i] = best_cluster;
         }
 
-        // --- Gather delle label ---
+        // Step 2: Gather all labels back to rank 0
+        // Prepare receive counts (convert from doubles back to number of points)
         vector<int> recv_counts(size), recv_start_idx(size);
         start = 0;
         for (int i = 0; i < size; i++) {
@@ -201,9 +217,10 @@ pair<vector<int>, int> KMeansClassifier::fit_parallel() {
             start += recv_counts[i];
         }
 
-        vector<int> new_labels(rank == 0 ? static_cast<int>(data.size()) : 0);
+        // Collect all labels on rank 0
+        vector<int> new_labels(rank == 0 ? num_points : 0);
         MPI_Gatherv(local_labels.data(),
-                    static_cast<int>(local_labels.size()),
+                    local_num_points,
                     MPI_INT,
                     new_labels.data(),
                     recv_counts.data(),
@@ -212,24 +229,27 @@ pair<vector<int>, int> KMeansClassifier::fit_parallel() {
                     0,
                     MPI_COMM_WORLD);
 
-        // Update local_centroids_history BEFORE computing new centroids
-        local_centroids_history = new_local_centroids_history;
-
-        // --- Aggiorna centroidi (solo rank 0) ---
+        // Step 3: Update centroids (only rank 0 does this)
         if (rank == 0) {
+            // Save current centroids to check for convergence later
+            local_centroids_history = new_local_centroids_history;
+
+            // Calculate new centroids based on the mean of assigned points
             vector<vector<double> > new_centroids(cluster_count, vector<double>(dimensions, 0.0));
             vector<int> counts(cluster_count, 0);
-            for (size_t i = 0; i < data.size(); i++) {
+            for (int i = 0; i < num_points; i++) {
                 const int cluster = new_labels[i];
                 for (int d = 0; d < dimensions; d++)
                     new_centroids[cluster][d] += data[i][d];
                 counts[cluster]++;
             }
+            // Divide by count to get the mean
             for (int c = 0; c < cluster_count; c++)
                 if (counts[c] > 0)
                     for (int d = 0; d < dimensions; d++)
                         new_centroids[c][d] /= counts[c];
 
+            // Flatten the new centroids into a 1D vector for broadcasting
             for (int c = 0; c < cluster_count; c++) {
                 for (int d = 0; d < dimensions; d++) {
                     new_local_centroids_history[c * dimensions + d] = new_centroids[c][d];
@@ -237,26 +257,34 @@ pair<vector<int>, int> KMeansClassifier::fit_parallel() {
             }
         }
 
-        // Broadcast both old and new centroids to all processes
-        MPI_Bcast(local_centroids_history.data(), size_lch, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        // Step 4: Broadcast new centroids to all processes
+        // This must happen before checking convergence
+        // All processes need the same centroids for the next iteration
         MPI_Bcast(new_local_centroids_history.data(), size_lch, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-        labels = new_labels;
+        // Step 5: Check if centroids have converged (only on rank 0)
+        // Check happens after broadcast to ensure consistency
+        if (rank == 0) {
+            // Compare old centroids with new centroids
+            // If they're the same, the algorithm has converged
+            converged = (iteration_count_parallel > 0) &&
+                        (local_centroids_history == new_local_centroids_history);
+        }
+
+        // Step 6: Share convergence status with all processes
+        MPI_Bcast(&converged, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
+
+        // Only rank 0 keeps the full labels array
+        if (rank == 0) {
+            labels = new_labels;
+        }
         iteration_count_parallel++;
-        /*MPI_Barrier(MPI_COMM_WORLD);
-        if (iteration_count_parallel == 1 || iteration_count_parallel == max_iterations-1) {
-            spdlog::debug("local_centroids_history: {}", local_centroids_history[0]);
-            spdlog::debug("new_local_centroids_history: {}", new_local_centroids_history[0]);
-        }*/
     }
-    /*spdlog::debug("local_centroids_history: {}", local_centroids_history[0]);
-    spdlog::debug("new_local_centroids_history: {}", new_local_centroids_history[0]);
-*/
+
     if (rank == 0) {
         spdlog::info("Finished parallel KMeans fit after {} iterations", iteration_count_parallel);
     }
 
-    //MPI_Barrier(MPI_COMM_WORLD);
     return {labels, iteration_count_parallel};
 }
 
