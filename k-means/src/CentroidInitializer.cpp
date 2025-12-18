@@ -2,9 +2,6 @@
 #include "CentroidInitializer.hpp"
 #include <iostream>
 #include <limits>
-#include <cmath>
-#include <algorithm>
-#include <set>
 #include "spdlog/spdlog.h"
 
 using namespace std;
@@ -71,7 +68,7 @@ vector<vector<double> > CentroidInitializer::init_kmeans_plus_plus(
     size_t n_samples = data.size();
 
     // Scegliamo il primo centroide a caso
-    uniform_int_distribution<> dis(0, n_samples - 1);
+    uniform_int_distribution<> dis(0, static_cast<int>(n_samples) - 1);
     centroids.push_back(data[dis(gen)]);
 
     // Array per memorizzare la distanza minima quadrata di ogni punto dal centroide più vicino
@@ -106,13 +103,13 @@ vector<vector<double> > CentroidInitializer::init_kmeans_plus_plus(
         for (size_t j = 0; j < n_samples; ++j) {
             cumulative_sum += min_dist_sq[j];
             if (cumulative_sum >= random_val) {
-                selected_index = j;
+                selected_index = static_cast<int>(j);
                 break;
             }
         }
 
         // Fallback nel caso di errori di arrotondamento (raro)
-        if (selected_index == -1) selected_index = n_samples - 1;
+        if (selected_index == -1) selected_index = static_cast<int>(n_samples - 1);
 
         centroids.push_back(data[selected_index]);
     }
