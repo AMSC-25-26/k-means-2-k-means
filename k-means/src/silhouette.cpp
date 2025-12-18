@@ -145,7 +145,7 @@ namespace silhouette {
 
         // Use OpenMP to split the work automatically among threads
         // Each thread calculates some points and adds to total_silhouette
-#pragma omp parallel for reduction(+:total_silhouette) schedule(dynamic)
+#pragma omp parallel for default(none) shared(data, labels, n_clusters, n_points) reduction(+:total_silhouette) schedule(dynamic)
         for (size_t i = 0; i < n_points; ++i) {
             total_silhouette += calculate_point_silhouette(i, data, labels, n_clusters);
         }
@@ -231,7 +231,7 @@ namespace silhouette {
 
         // Use OpenMP to split the work automatically among threads
         // Each thread calculates some points and adds to total_silhouette
-#pragma omp parallel for reduction(+:total_silhouette) schedule(dynamic)
+#pragma omp parallel for default(none) shared(data, labels, n_clusters, all_indices, actual_sample_size) reduction(+:total_silhouette) schedule(dynamic)
         for (size_t i = 0; i < actual_sample_size; ++i) {
             const size_t idx = all_indices[i];
             total_silhouette += calculate_point_silhouette(idx, data, labels, n_clusters);
