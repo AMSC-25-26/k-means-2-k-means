@@ -1,4 +1,3 @@
-#include <iostream>
 #include <vector>
 #include <string>
 #include <spdlog/spdlog.h>
@@ -40,14 +39,14 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    vector<vector<double> > content = load_csv_dataset(input_filename);
+    const vector<vector<double> > content = load_csv_dataset(input_filename);
     if (content.empty()) {
         spdlog::error("Input dataset is empty or failed to load: {}", input_filename);
         return 1;
     }
 
     KMeansClassifier kmeans(content, cluster_count);
-    vector<int> labels = kmeans.fit();
+    const vector<int> labels = kmeans.fit();
 
     if (rank == 0) {
         save_csv_dataset(output_filename, content, labels);
