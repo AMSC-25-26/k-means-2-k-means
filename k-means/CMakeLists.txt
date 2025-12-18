@@ -37,6 +37,13 @@ add_executable(
 
 target_include_directories(k_means PRIVATE ${rapidcsv_SOURCE_DIR}/src)
 target_include_directories(k_means PRIVATE ${spdlog_SOURCE_DIR}/include)
+
+# OpenMP compile flags
+if (OpenMP_CXX_FOUND OR LIBOMP_LIBRARY)
+    target_compile_options(k_means PRIVATE -fopenmp)
+    target_link_options(k_means PRIVATE -fopenmp)
+endif()
+
 # cmake
 if (APPLE)
     # Prova prima il find_package standard
@@ -78,4 +85,3 @@ else ()
 endif ()
 
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
-

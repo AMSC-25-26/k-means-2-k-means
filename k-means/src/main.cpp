@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 
         // Compute silhouette score for the clustering and log it.
         try {
-            double sil = silhouette::complete_serial(content, labels, cluster_count);
+            double sil = silhouette::complete_parallel(content, labels, cluster_count);
             spdlog::info("Silhouette score: {:.6f}", sil);
             // Warn if silhouette score is low (threshold 0.25 chosen as a heuristic)
             if (sil < 0.25) {
