@@ -126,4 +126,3 @@ Reproducibility & test datasets
 - Example datasets in `data/`: `dataset-iris.csv` and `dataset-wine.csv`.
 - Provided expected cluster CSVs: `iris-clusters.csv`, `wine-clusters.csv`.
 
-Contact / notes for the professor
