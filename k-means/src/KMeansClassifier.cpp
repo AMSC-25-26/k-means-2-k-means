@@ -163,7 +163,7 @@ pair<vector<int>, int> KMeansClassifier::fit_parallel() {
     // --- Labels locali ---
     vector<int> local_labels(local_count / dimensions);
 
-    int iteration_count_parallel = 0;
+    iteration_count_parallel = 0;
 
     vector<int> labels;
 
@@ -266,7 +266,7 @@ pair<vector<int>, int> KMeansClassifier::fit_sequential() {
                  max_iterations);
 
     vector<int> labels;
-    int iteration_count_sequential = 0;
+    iteration_count_sequential = 0;
     // We stop when centroids do not change, or we reach max iterations
     while (iteration_count_sequential < max_iterations && (
                iteration_count_sequential == 0 || centroids_history_sequential.back() != centroids_history_sequential[
