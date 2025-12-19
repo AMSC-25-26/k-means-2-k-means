@@ -8,11 +8,22 @@
 
 \frame{\titlepage}
 
+
 \begin{frame}\frametitle{Objectives}
     \begin{itemize}
         \item Implement K-means clustering in C++
         \item Evaluate on standard datasets (Iris, Wine)
         \item Produce simple classifier and outputs for inspection
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{What is K-means clustering}
+    \begin{itemize}
+        \item Unsupervised algorithm that partitions data into $k$ clusters
+        \item Iterative procedure: initialize $k$ centroids, assign each point to the nearest centroid, update centroids as the mean of assigned points
+        \item Objective: minimize within-cluster sum of squares (WCSS):
+              $$\sum_{j=1}^k \sum_{x_i \in C_j} \lVert x_i - \mu_j \rVert^2$$
+        \item Pros: simple and fast; Cons: requires choosing $k$, sensitive to initialization (see later on this), assumes roughly spherical clusters
     \end{itemize}
 \end{frame}
 
@@ -46,11 +57,11 @@
         \item Implements \texttt{k-means++} : selects initial cluster centroids to improve convergence maximizing inter-centroid distance
         \item First centroid chosen uniformly at random from data
         \item For each point, compute squared distance to nearest chosen centroid
-        \item Select next centroid with probability proportional to that squared distance 
-            \begin{equation}
-            P(x) = \frac{D(x)^2}{\sum_{x_i \in X} D(x_i)^2}
-            \end{equation}
-        \item Repeat weighted sampling until \texttt{k} centroids are chosen 
+        \item Select next centroid with probability proportional to that squared distance
+              \begin{equation}
+                  P(x) = \frac{D(x)^2}{\sum_{x_i \in X} D(x_i)^2}
+              \end{equation}
+        \item Repeat weighted sampling until \texttt{k} centroids are chosen
     \end{itemize}
 \end{frame}
 
@@ -119,7 +130,7 @@
             \hline
         \end{tabular}
     \end{center}
-        \vspace{2mm}
+    \vspace{2mm}
     \begin{itemize}
         \item Observed speedup: $\sim 8\times$ from 1 to 2 procs; diminishing returns at 4 procs for this small dataset
     \end{itemize}
