@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="k_means - wine" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="./data/dataset-wine.csv ./data/output.csv 11 ./data/wine-clusters.csv" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$ProjectFileDir$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="k_means" TARGET_NAME="k_means" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="k_means" RUN_TARGET_NAME="k_means">
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>

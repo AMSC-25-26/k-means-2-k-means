@@ -1,0 +1,139 @@
+\documentclass{beamer}
+\title{K-means: Implementation and Evaluation}
+\author{Emilio Dalla Torre, Efrem Marzatico,\\Sebastiano Perni, Lorenzo Terzi}
+\institute{Hands-on K-means}
+\date{19 December 2025}
+
+\begin{document}
+
+\frame{\titlepage}
+
+
+\begin{frame}\frametitle{Objectives}
+    \begin{itemize}
+        \item Implement K-means clustering in C++
+        \item Evaluate on standard datasets (Iris, Wine)
+        \item Produce simple classifier and outputs for inspection
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{What is K-means clustering}
+    \begin{itemize}
+        \item Unsupervised algorithm that partitions data into $k$ clusters
+        \item Iterative procedure: initialize $k$ centroids, assign each point to the nearest centroid, update centroids as the mean of assigned points
+        \item Objective: minimize within-cluster sum of squares (WCSS):
+              $$\sum_{j=1}^k \sum_{x_i \in C_j} \lVert x_i - \mu_j \rVert^2$$
+        \item Pros: simple and fast; Cons: requires choosing $k$, sensitive to initialization (see later on this), assumes roughly spherical clusters
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Implementation}
+    \begin{itemize}
+        \item Language: C++ (modular source files)
+        \item Key modules: \texttt{CentroidInitializer}, \texttt{KMeansClassifier}, data IO, \texttt{main}
+        \item Design: initialization, iterative update, convergence check
+        \item Parallelized compute with MPI for distance and reduction operations
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Datasets}
+    \begin{itemize}
+        \item Iris: 150 samples, 3 classes
+        \item Wine: 1599 samples, 11 classes
+        \item CSV inputs in the \texttt{data/} folder; outputs saved as CSVs
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Method}
+    \begin{itemize}
+        \item Standard K-means with Euclidean distance
+        \item Centroids updated until convergence
+        \item Alternative initializers available in \texttt{CentroidInitializer}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Centroid initializer (K-means++)}
+    \begin{itemize}
+        \item Implements \texttt{k-means++} : selects initial cluster centroids to improve convergence maximizing inter-centroid distance
+        \item First centroid chosen uniformly at random from data
+        \item For each point, compute squared distance to nearest chosen centroid
+        \item Select next centroid with probability proportional to that squared distance
+              \begin{equation}
+                  P(x) = \frac{D(x)^2}{\sum_{x_i \in X} D(x_i)^2}
+              \end{equation}
+        \item Repeat weighted sampling until \texttt{k} centroids are chosen
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Evaluation}
+    \begin{itemize}
+        \item Compare cluster labels with ground truth
+        \item Metrics: purity and qualitative inspection of CSV outputs
+        \item Output examples: \texttt{iris-clusters.csv}, \texttt{wine-clusters.csv}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Silhouette Score: Definition and Implementation}
+    \begin{itemize}
+        \item Measures clustering quality without ground truth labels
+        \item For each point $i$: compute $a(i)$ = mean distance to points in same cluster
+        \item Compute $b(i)$ = mean distance to nearest other cluster
+        \item Silhouette coefficient: $s(i) = \frac{b(i) - a(i)}{\max(a(i), b(i))}$
+        \item Range: $[-1, 1]$; higher is better
+        \item Implemented in \texttt{silhouette.cpp}: \texttt{euclidean\_distance}, \texttt{calculate\_point\_silhouette}
+        \item Helper function computes per-point coefficient; overall score is average
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Silhouette Score: Multiple Strategies}
+    \begin{itemize}
+        \item \textbf{Complete Serial} (\texttt{complete\_serial}): computes all points sequentially
+        \item \textbf{Complete Parallel} (\texttt{complete\_parallel}): OpenMP parallelization with \texttt{\#pragma omp parallel for} and dynamic scheduling
+        \item \textbf{Approximate Serial} (\texttt{approximate\_serial}): random sampling with \texttt{std::shuffle} for faster evaluation
+        \item \textbf{Approximate Parallel} (\texttt{approximate\_parallel}): combines sampling with OpenMP for large datasets
+        \item Trade-off: accuracy vs. computational cost
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Results}
+    \begin{itemize}
+        \item Iris: clear separation for several runs
+        \item Wine: partial separation and sensitivity to initialization
+        \item Implementation is pedagogical and functional for small datasets
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Parallelization details}
+    \begin{itemize}
+        \item MPI initialized in \texttt{main.cpp} with \texttt{MPI\_Init}, \texttt{MPI\_Comm\_rank}, \texttt{MPI\_Comm\_size}
+        \item Rank 0 handles I/O and sequential reference run
+        \item Data distributed via \texttt{MPI\_Scatterv}; labels gathered with \texttt{MPI\_Gatherv}
+        \item Centroids broadcast with \texttt{MPI\_Bcast}; master computes new centroids and broadcasts updates
+        \item Timings logged: sequential and parallel runtimes measured in \texttt{KMeansClassifier::fit}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Benchmarks (iris dataset, $k=3$)}
+    \begin{itemize}
+        \item Measured on \texttt{data/dataset-iris.csv} with 3 clusters (results from repository benchmark)
+        \item Table: elapsed wall time, exit code and silhouette score (averaged)
+    \end{itemize}
+    \vspace{3mm}
+    \begin{center}
+        \begin{tabular}{r r r r}
+            \hline
+            \# procs & elapsed s & exit code & silhouette \\
+            \hline
+            1        & 1.974626  & 0         & 0.552592   \\
+            2        & 1.102324  & 0         & 0.552592   \\
+            4        & 1.067402  & 0         & 0.552592   \\
+            \hline
+        \end{tabular}
+    \end{center}
+    \vspace{2mm}
+    \begin{itemize}
+        \item Observed speedup: $\sim 2\times$ from 1 to 2 procs; less dramatical from 2 to 4 due to overhead
+    \end{itemize}
+\end{frame}
+
+\end{document}

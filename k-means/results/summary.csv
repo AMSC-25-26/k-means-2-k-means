@@ -1,0 +1,4 @@
+n,elapsed_seconds,exit_code,silhouette,log
+1,1.974626,0,0.552592,results/out-bench-1.log
+2,0.239624,0,0.552592,results/out-bench-2.log
+4,0.250402,0,0.262306,results/out-bench-4.log
