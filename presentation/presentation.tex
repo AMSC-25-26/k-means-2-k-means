@@ -1,9 +1,8 @@
 \documentclass{beamer}
-% Concise presentation for a 5-minute talk
 \title{K-means: Implementation and Evaluation}
 \author{Emilio Dalla Torre, Efrem Marzatico,\\Sebastiano Perni, Lorenzo Terzi}
 \institute{Hands-on K-means}
-\date{\today}
+\date{19 December 2025}
 
 \begin{document}
 
@@ -44,11 +43,14 @@
 
 \begin{frame}\frametitle{Centroid initializer (K-means++)}
     \begin{itemize}
-        \item Implements \texttt{k-means++} : selects initial cluster centroids using sampling based on an empirical probability distribution of the points' contribution to the overall inertia
+        \item Implements \texttt{k-means++} : selects initial cluster centroids to improve convergence maximizing inter-centroid distance
         \item First centroid chosen uniformly at random from data
         \item For each point, compute squared distance to nearest chosen centroid
-        \item Select next centroid with probability proportional to that squared distance
-        \item Repeat weighted sampling until \texttt{k} centroids are chosen to speed convergence
+        \item Select next centroid with probability proportional to that squared distance 
+            \begin{equation}
+            P(x) = \frac{D(x)^2}{\sum_{x_i \in X} D(x_i)^2}
+            \end{equation}
+        \item Repeat weighted sampling until \texttt{k} centroids are chosen 
     \end{itemize}
 \end{frame}
 
